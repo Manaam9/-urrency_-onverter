@@ -6,13 +6,13 @@ import requests
 def convert(amount, cur_from, cur_to, date):
 
     """
-    Function gets amount of value that you have(amount), name of the currency
-    that you have(cur_from), name of the currency that you want to transfer to(cur_to)
+    Function gets amount of currency that you have (amount), name of the currency
+    that you have(cur_from), name of the currency that you want to transfer to (cur_to)
     (according to the abbreviations of Central Bank of Russian Federation API),
-    the date for which you want to get the calculation and the request to connect to the API (requests).
+    the date for which you want to get the calculation (date).
     """
 
-    response = requests.get('http://www.cbr.ru/scripts/XML_daily.asp', {'date_req': date})
+    response = requests.get('http://www.cbr.ru/scripts/XML_daily.asp', params={'date_req': date})
     soup = BeautifulSoup(response.content, 'lxml')
     currency_tree = soup.find('valcurs')
     currency_val = {}
@@ -22,7 +22,7 @@ def convert(amount, cur_from, cur_to, date):
         try:
             if cur.find('charcode').string == cur_from or cur.find('charcode').string == cur_to:
                 currency_val[cur.charcode.string] = (cur.nominal.string, cur.value.string.replace(',', '.'))
-        except AttributeError :
+        except AttributeError:
             continue
 
     if cur_from == 'RUR' and cur_to != 'RUR':
@@ -38,6 +38,6 @@ def convert(amount, cur_from, cur_to, date):
         cur_from_rub = Decimal(amount) * Decimal(currency_val[cur_from][1]) / Decimal(currency_val[cur_from][0])
         result = cur_from_rub * Decimal(currency_val[cur_to][0]) / Decimal(currency_val[cur_to][1])
 
-    result = Decimal(result).quantize(Decimal('1.0000'))  # не забыть про округление до 4х знаков после запятой
+    result = Decimal(result).quantize(Decimal('1.0000'))  # round up to 4 decimal places
 
     return result
